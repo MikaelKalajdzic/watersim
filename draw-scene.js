@@ -1,3 +1,5 @@
+let cameraPosition = [0, 0, 6];
+let cameraRotation = [0, 0, 0];
 function drawScene(gl, programInfo, buffers, texture, cubeRotation) {
     gl.clearColor(0.0, 0.0, 0.0, 1.0); // Clear to black, fully opaque
     gl.clearDepth(1.0); // Clear everything
@@ -25,9 +27,22 @@ function drawScene(gl, programInfo, buffers, texture, cubeRotation) {
     // as the destination to receive the result.
     mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
 
+    // Reset the modelViewMatrix to the identity matrix
+    const modelViewMatrix = mat4.create();
+
+    // Apply the camera position and orientation to the modelViewMatrix
+    const cameraMatrix = mat4.create();
+    mat4.translate(cameraMatrix, cameraMatrix, cameraPosition);
+    mat4.rotateX(cameraMatrix, cameraMatrix, cameraRotation[0]);
+    mat4.rotateY(cameraMatrix, cameraMatrix, cameraRotation[1]);
+    mat4.rotateZ(cameraMatrix, cameraMatrix, cameraRotation[2]);
+    const viewMatrix = mat4.create();
+    mat4.invert(viewMatrix, cameraMatrix);
+    mat4.multiply(modelViewMatrix, modelViewMatrix, viewMatrix);
+
     // Set the drawing position to the "identity" point, which is
     // the center of the scene.
-    const modelViewMatrix = mat4.create();
+    //const modelViewMatrix = mat4.create();
 
     // Now move the drawing position a bit to where we want to
     // start drawing the square.
@@ -54,7 +69,7 @@ function drawScene(gl, programInfo, buffers, texture, cubeRotation) {
         modelViewMatrix, // matrix to rotate
         cubeRotation * 0.3, // amount to rotate in radians
         [1, 0, 0]
-    ); // axis to rotate around (X)
+    ); // axis to rotate around (X)*/
 
     const normalMatrix = mat4.create();
     mat4.invert(normalMatrix, modelViewMatrix);
@@ -186,6 +201,23 @@ function setNormalAttribute(gl, buffers, programInfo) {
         offset
     );
     gl.enableVertexAttribArray(programInfo.attribLocations.vertexNormal);
+}
+
+// Bind event listeners to the canvas to track mouse movements
+const canvas = document.querySelector('canvas');
+canvas.addEventListener('mousemove', handleMouseMove);
+
+function handleMouseMove(event) {
+    const {clientX, clientY} = event;
+    const {left, top, width, height} = canvas.getBoundingClientRect();
+
+    // Normalize mouse coordinates to [-1, 1]
+    const x = (clientX - left) / width * 2 - 1;
+    const y = (clientY - top) / height * 2 - 1;
+
+    // Update camera rotation based on mouse position
+    cameraRotation[1] = 0.1 * x * Math.PI;
+    cameraRotation[0] = 0.1 * y * Math.PI;
 }
 
 export {drawScene};
