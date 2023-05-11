@@ -1,8 +1,6 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
 import * as dat from 'dat.gui';
-import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { Water } from 'three/examples/jsm/objects/Water.js';
 
 // Sets the renderer to fit the whole screen
 const renderer = new THREE.WebGLRenderer({antialias: true});
@@ -59,15 +57,18 @@ function animate(time) {
 
     // Update water material
     waterAnimate();
+<<<<<<< HEAD
 
 
     //waterMaterial.uniforms.time.value = time * 0.001;
+=======
+>>>>>>> origin/yolo
 }
 
 renderer.setAnimationLoop(animate);
 
 // For resizing window
-window.addEventListener('resize', function() {
+window.addEventListener('resize', function () {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -87,15 +88,16 @@ const options = {
 };
 
 // for sphere object
-gui.addColor(options, 'sphereColor').onChange(function(e){
+gui.addColor(options, 'sphereColor').onChange(function (e) {
     sphere.material.color.set(e);
 });
-gui.add(options, 'wireframe').onChange(function(e){
+gui.add(options, 'wireframe').onChange(function (e) {
     sphere.material.wireframe = e;
 });
 gui.add(options, 'speed', 0, 0.1);
 
 let step = 0;
+
 function bounceSphere() {
 
 }
@@ -155,7 +157,6 @@ function animateSpotlight() {
 renderer.shadowMap.enabled = true;
 
 
-
 /* ============== Objects ============== */
 
 /* ===== Adding a box to the scene ===== */
@@ -168,21 +169,7 @@ scene.add(box);
 function rotateBox(time) {
     box.rotation.x = time / 1000;
     box.rotation.y = time / 1000;
-} 
-
-
-/* ===== Adding a plane to the scene ===== */
-// const planeGeometry = new THREE.PlaneGeometry(30, 30);
-// const planeMaterial = new THREE.MeshStandardMaterial({
-//     color: 0xFFFFFF,
-//     side: THREE.DoubleSide
-// });
-// const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-// scene.add(plane);
-// // Rotate plane so it is horizontal
-// plane.rotation.x = -0.5 * Math.PI;
-// // Enabling shadows on the plane
-// plane.receiveShadow = true;
+}
 
 /* ===== Adding a sphere to the scene ===== */
 const sphereGeometry = new THREE.SphereGeometry(4, 50, 50); // higher the number are, the more faces we have - note some of will appear black, beacuse they need a light source
@@ -206,9 +193,11 @@ const geometry = new THREE.PlaneGeometry(10, 10, 32, 32);
 const waterShader = {
     uniforms: {
         time: { value: 0 },
+        radius: { value: 0.1 },
+        mouse: { value: new THREE.Vector2() },
     },
 
-    vertexShader: `
+    /*vertexShader: `
     uniform float time;
     varying vec2 vUv;
 
@@ -219,7 +208,47 @@ const waterShader = {
       pos.z += sin(pos.y * 4.0 + time * 0.5) * 0.1;
       gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
     }
-  `,
+  `,*/
+
+    // Define the vertex shader
+    /*vertexShader: `
+      uniform float time;
+      uniform float speed;
+      uniform float frequency;
+      uniform float amplitude;
+      varying vec2 vUv;
+    
+      void main() {
+        vUv = uv;
+        vec3 pos = position;
+        pos.z = sin(pos.x * frequency + time * speed) * amplitude + sin(pos.y * frequency + time * speed) * amplitude;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+      }
+    `,*/
+
+    // Define the vertex shader
+    vertexShader: `
+      uniform float time;
+      uniform float radius;
+      uniform vec2 mouse;
+      varying vec2 vUv;
+    
+      void main() {
+        vUv = uv;
+    
+        // Calculate the distance from the vertex to the mouse position
+        float distance = length(mouse - vUv);
+    
+        // Calculate the displacement of the vertex based on the spring equation
+        float displacement = sin(distance * 10.0 - time * 10.0) * radius / distance;
+    
+        // Apply the displacement to the vertex position
+        vec3 pos = position + normal * displacement;
+    
+        // Set the position of the vertex
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+      }
+    `,
 
     fragmentShader: `
     varying vec2 vUv;
@@ -247,10 +276,10 @@ let mousePos = new THREE.Vector2();
 let lastMousePos = new THREE.Vector2();
 
 // Add an event listener to track the mouse position
+// Add an event listener to track the mouse position
 document.addEventListener('mousemove', (event) => {
-    lastMousePos.copy(mousePos);
-    mousePos.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mousePos.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    const mouse = new THREE.Vector2(event.clientX / window.innerWidth, 1.0 - event.clientY / window.innerHeight);
+    material.uniforms.mouse.value = mouse;
 });
 
 // Define a function to create ripples on the water surface
@@ -289,17 +318,15 @@ function createRipple() {
 
 // Define the animate function
 function waterAnimate() {
-    requestAnimationFrame(animate);
+    requestAnimationFrame(waterAnimate);
 
     // Update the shader uniform variables
     material.uniforms.time.value += 0.01;
 
-    // Create ripples on the water surface
-    if (mousePos.distanceTo(lastMousePos) > 0) {
-        createRipple();
-    }
-
     // Render the scene
     renderer.render(scene, camera);
 }
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/yolo
