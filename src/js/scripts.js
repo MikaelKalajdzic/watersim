@@ -1,8 +1,6 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
 import * as dat from 'dat.gui';
-import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { Water } from 'three/examples/jsm/objects/Water.js';
 
 // Sets the renderer to fit the whole screen
 const renderer = new THREE.WebGLRenderer({antialias: true});
@@ -58,10 +56,8 @@ function animate(time) {
     bounceSphere();
 
     // Update water material
-    waterAnimate();
+    waterAnimate(time);
 
-
-    //waterMaterial.uniforms.time.value = time * 0.001;
 }
 
 renderer.setAnimationLoop(animate);
@@ -205,30 +201,46 @@ const geometry = new THREE.PlaneGeometry(10, 10, 32, 32);
 // Create a shader material
 const waterShader = {
     uniforms: {
-        time: { value: 0 },
+      time: { value: 0 },
+      rippleCenter: { value: new THREE.Vector2(5.5, 0.5) }, // Center of the ripple
+      rippleRadius: { value: 0.1 }, // Radius of the ripple
+      rippleStrength: { value: 0.5 }, // Strength/intensity of the ripple
     },
-
+  
     vertexShader: `
-    uniform float time;
-    varying vec2 vUv;
-
-    void main() {
-      vUv = uv;
-      vec3 pos = position;
-      pos.z += sin(pos.x * 3.0 + time) * 0.1;
-      pos.z += sin(pos.y * 4.0 + time * 0.5) * 0.1;
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-    }
-  `,
-
+      uniform float time;
+      varying vec2 vUv;
+  
+      void main() {
+        vUv = uv;
+        vec3 pos = position;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+      }
+    `,
+  
     fragmentShader: `
-    varying vec2 vUv;
+      uniform float time;
+      uniform vec2 rippleCenter;
+      uniform float rippleRadius;
+      uniform float rippleStrength;
+      varying vec2 vUv;
+  
+      void main() {
+        float distanceToCenter = distance(rippleCenter, vUv);
+        float rippleAmount = smoothstep(rippleRadius - 0.5, rippleRadius + 0.5, distanceToCenter);
+        vec4 color = vec4(0.0, 0.5, 1.0, 1.0);
+        gl_FragColor = color * (1.0 - rippleStrength * rippleAmount);
+      }
+    `,
+  };
+  
 
-    void main() {
-      gl_FragColor = vec4(0.0, 0.5, 1.0, 1.0);
-    }
-  `,
-};
+let gridSize = 100;
+let damping = 0.05;
+let springConstant = 0.05;
+let waterHeight = [];
+let velocity = [];
+
 
 // Create the shader material
 const material = new THREE.ShaderMaterial({
@@ -236,8 +248,17 @@ const material = new THREE.ShaderMaterial({
     vertexShader: waterShader.vertexShader,
     fragmentShader: waterShader.fragmentShader,
 });
-const plane = new THREE.Mesh(geometry, material);
+const plane = new THREE.Mesh(new THREE.PlaneGeometry(10, 10, gridSize, gridSize), material);
 plane.rotateX(-Math.PI / 2);
+
+for(let i = 0; i <= gridSize; i++) {
+    waterHeight[i] = [];
+    velocity[i] = [];
+    for(let j = 0; j <= gridSize; j++) {
+        waterHeight[i][j] = 0;
+        velocity[i][j] = 0;
+    }
+}
 
 // Add the mesh object to the scene
 scene.add(plane);
@@ -254,52 +275,89 @@ document.addEventListener('mousemove', (event) => {
 });
 
 // Define a function to create ripples on the water surface
-function createRipple() {
-    // Get the center of the plane geometry
-    const center = new THREE.Vector3();
-    plane.geometry.computeBoundingBox();
-    plane.geometry.boundingBox.getCenter(center);
-
-    // Convert the mouse position to local coordinates
-    const localMousePos = mousePos.clone().unproject(camera);
-    const ray = new THREE.Raycaster(camera.position, localMousePos.sub(camera.position).normalize());
-    const intersection = ray.intersectObject(plane);
-
-    if (intersection) {
-        // Calculate the distance from the center of the plane
-        const distance = center.distanceTo(intersection.point);
-
-        // Create a ripple by adjusting the `z` position of each vertex in the plane geometry
-        const vertices = plane.geometry.vertices;
-        const maxDistance = 1;
-        const maxHeight = 0.1;
-        for (let i = 0; i < vertices.length; i++) {
-            const vertex = vertices[i];
-            const vertexDistance = center.distanceTo(vertex);
-            const d = Math.abs(distance - vertexDistance) / maxDistance;
-            if (d <= 1) {
-                vertex.z += Math.sin(d * Math.PI) * maxHeight * 0.05;
-            }
-        }
-
-        // Notify Three.js that the geometry has been updated
-        plane.geometry.verticesNeedUpdate = true;
-    }
+function createRipple(intersection) {
+    let intersectedVertex = intersection.face.a;
+    let i = Math.floor(intersectedVertex / (gridSize + 1));
+    let j = intersectedVertex % (gridSize + 1);
+    waterHeight[i][j] += 0.2;
 }
 
 // Define the animate function
-function waterAnimate() {
-    requestAnimationFrame(animate);
-
-    // Update the shader uniform variables
-    material.uniforms.time.value += 0.01;
-
-    // Create ripples on the water surface
-    if (mousePos.distanceTo(lastMousePos) > 0) {
-        createRipple();
+function waterAnimate(time) {
+    material.uniforms.time.value += 0.5;
+  
+    let newHeight = [];
+    const positionAttribute = plane.geometry.attributes.position;
+  
+    for (let i = 0; i <= gridSize; i++) {
+      newHeight[i] = [];
+      for (let j = 0; j <= gridSize; j++) {
+        if (i > 0 && i < gridSize && j > 0 && j < gridSize) {
+          let force = 0;
+          force += springConstant * (waterHeight[i - 1][j] - waterHeight[i][j]);
+          force += springConstant * (waterHeight[i + 1][j] - waterHeight[i][j]);
+          force += springConstant * (waterHeight[i][j - 1] - waterHeight[i][j]);
+          force += springConstant * (waterHeight[i][j + 1] - waterHeight[i][j]);
+          let acceleration = force / 1; // mass = 1
+          velocity[i][j] = damping * (velocity[i][j] + acceleration);
+        }
+        newHeight[i][j] = waterHeight[i][j] + velocity[i][j];
+        positionAttribute.setZ(i * (gridSize + 1) + j, newHeight[i][j]);
+  
+        // Propagate ripple to neighboring vertices in a circular pattern
+        const rippleRadius = material.uniforms.rippleRadius.value;
+        const rippleStrength = material.uniforms.rippleStrength.value;
+        const rippleCenter = material.uniforms.rippleCenter.value;
+  
+        const dx = j - rippleCenter.x * gridSize;
+        const dy = i - rippleCenter.y * gridSize;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < rippleRadius) {
+          const influence = (1 - distance / rippleRadius) * rippleStrength;
+          if (i > 0) {
+            velocity[i - 1][j] += influence;
+          }
+          if (i < gridSize) {
+            velocity[i + 1][j] += influence;
+          }
+          if (j > 0) {
+            velocity[i][j - 1] += influence;
+          }
+          if (j < gridSize) {
+            velocity[i][j + 1] += influence;
+          }
+        }
+      }
     }
-
-    // Render the scene
+    waterHeight = newHeight;
+    positionAttribute.needsUpdate = true;
+  
     renderer.render(scene, camera);
-}
+  }
+  
+  
 
+// Mouse event
+renderer.domElement.addEventListener('mousedown', function(event) {
+    event.preventDefault();
+
+    const mouse = new THREE.Vector2();
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObject(plane);
+    if (intersects.length > 0) {
+        createRipple(intersects[0]);
+    }
+}, false);
+
+// For resizing window
+window.addEventListener('resize', function() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+renderer.setAnimationLoop(waterAnimate);
