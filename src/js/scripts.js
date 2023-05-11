@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
 import * as dat from 'dat.gui';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { Water } from 'three/examples/jsm/objects/Water.js';
 
 // Sets the renderer to fit the whole screen
 const renderer = new THREE.WebGLRenderer({antialias: true});
@@ -55,6 +56,9 @@ function animate(time) {
 
     // Adding bounce effect on sphere
     bounceSphere();
+
+    // Update water material
+    waterMaterial.uniforms.time.value = time * 0.001;
 }
 
 renderer.setAnimationLoop(animate);
@@ -166,17 +170,17 @@ function rotateBox(time) {
 
 
 /* ===== Adding a plane to the scene ===== */
-const planeGeometry = new THREE.PlaneGeometry(30, 30);
-const planeMaterial = new THREE.MeshStandardMaterial({
-    color: 0xFFFFFF,
-    side: THREE.DoubleSide
-});
-const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-scene.add(plane);
-// Rotate plane so it is horizontal
-plane.rotation.x = -0.5 * Math.PI;
-// Enabling shadows on the plane
-plane.receiveShadow = true;
+// const planeGeometry = new THREE.PlaneGeometry(30, 30);
+// const planeMaterial = new THREE.MeshStandardMaterial({
+//     color: 0xFFFFFF,
+//     side: THREE.DoubleSide
+// });
+// const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+// scene.add(plane);
+// // Rotate plane so it is horizontal
+// plane.rotation.x = -0.5 * Math.PI;
+// // Enabling shadows on the plane
+// plane.receiveShadow = true;
 
 /* ===== Adding a sphere to the scene ===== */
 const sphereGeometry = new THREE.SphereGeometry(4, 50, 50); // higher the number are, the more faces we have - note some of will appear black, beacuse they need a light source
@@ -188,5 +192,31 @@ const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
 scene.add(sphere);
 sphere.position.set(-10, 10, 0);
 
-// Enabling shadows on the shpere (cast shadows on the plane)
+// Enabling shadows on the shpere (cast shadows on the plane) 
 sphere.castShadow = true;
+
+
+// Import the water vertex and fragment shaders
+import waterVertexShader from '../../shaders/water/water.vert';
+import waterFragmentShader from '../../shaders/water/water.frag';
+
+// Create the water shader material
+const waterMaterial = new THREE.ShaderMaterial({
+  uniforms: {
+    time: { value: 0 },
+    resolution: { value: new THREE.Vector2() },
+  },
+  vertexShader: waterVertexShader,
+  fragmentShader: waterFragmentShader,
+});
+
+// Create a plane geometry for the water grid
+const waterGeometry = new THREE.PlaneGeometry(30, 30, 50, 50);
+
+// Create the water mesh and add it to the scene
+const waterMesh = new THREE.Mesh(waterGeometry, waterMaterial);
+scene.add(waterMesh);
+
+// Set the resolution uniform based on the renderer's size
+waterMaterial.uniforms.resolution.value.set(renderer.domElement.width, renderer.domElement.height);
+
