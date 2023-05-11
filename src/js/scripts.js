@@ -58,6 +58,9 @@ function animate(time) {
     bounceSphere();
 
     // Update water material
+    waterAnimate();
+
+
     //waterMaterial.uniforms.time.value = time * 0.001;
 }
 
@@ -94,8 +97,7 @@ gui.add(options, 'speed', 0, 0.1);
 
 let step = 0;
 function bounceSphere() {
-    step += options.speed;
-    sphere.position.y = 10 * Math.abs(Math.sin(step))
+
 }
 
 gui.add(options, 'angle', 0, 1);
@@ -276,7 +278,7 @@ function createRipple() {
             const vertexDistance = center.distanceTo(vertex);
             const d = Math.abs(distance - vertexDistance) / maxDistance;
             if (d <= 1) {
-                vertex.z += Math.sin(d * Math.PI) * maxHeight;
+                vertex.z += Math.sin(d * Math.PI) * maxHeight ;
             }
         }
 
@@ -290,7 +292,7 @@ function waterAnimate() {
     requestAnimationFrame(animate);
 
     // Update the shader uniform variables
-    material.uniforms.time.value += 0.1;
+    material.uniforms.time.value += 0.01;
 
     // Create ripples on the water surface
     if (mousePos.distanceTo(lastMousePos) > 0) {
@@ -300,4 +302,4 @@ function waterAnimate() {
     // Render the scene
     renderer.render(scene, camera);
 }
-waterAnimate();
+
