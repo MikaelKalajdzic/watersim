@@ -1,8 +1,8 @@
-# ThreeBoilerplate
+# Water simulation
 
-This is the boilerplate that I'm using for my Three.js tutorials.
+This is a project in our computer graphics class.
 
-Wanna use it? okay then just follow these simple steps:
+To use this project : 
 
 1. Clone the repository;
 2. Open the folder in Visual Studio Code;
@@ -11,6 +11,6 @@ Wanna use it? okay then just follow these simple steps:
 5. Ctrl + click on the server link "http://localhost:1234" to open the app in your browser;
 6. Have fun!
 
-• The ./static folder is where you put the images and 3D models.
+• The ./static folder is where we have the images and 3D models.
 
-• The the ./src/ is where you put your Javascript and CSS folders and files.
+• The the ./src/ is where we have Javascript and CSS folders and files.
