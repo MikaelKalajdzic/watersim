@@ -58,7 +58,7 @@ function animate(time) {
     bounceSphere();
 
     // Update water material
-    waterMaterial.uniforms.time.value = time * 0.001;
+    //waterMaterial.uniforms.time.value = time * 0.001;
 }
 
 renderer.setAnimationLoop(animate);
@@ -189,34 +189,115 @@ const sphereMaterial = new THREE.MeshStandardMaterial({
     wireframe: false // when set to true, we can see the geometry of the sphere 
 });
 const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
-scene.add(sphere);
+//scene.add(sphere);
 sphere.position.set(-10, 10, 0);
 
 // Enabling shadows on the shpere (cast shadows on the plane) 
 sphere.castShadow = true;
 
+// Create a plane geometry
+const geometry = new THREE.PlaneGeometry(10, 10, 32, 32);
+// Create a basic material
+//const material = new THREE.MeshBasicMaterial({ color: 0x0088ff });
+// Create a mesh object
+// Create a shader material
+const waterShader = {
+    uniforms: {
+        time: { value: 0 },
+    },
 
-// Import the water vertex and fragment shaders
-import waterVertexShader from '../../shaders/water/water.vert';
-import waterFragmentShader from '../../shaders/water/water.frag';
+    vertexShader: `
+    uniform float time;
+    varying vec2 vUv;
 
-// Create the water shader material
-const waterMaterial = new THREE.ShaderMaterial({
-  uniforms: {
-    time: { value: 0 },
-    resolution: { value: new THREE.Vector2() },
-  },
-  vertexShader: waterVertexShader,
-  fragmentShader: waterFragmentShader,
+    void main() {
+      vUv = uv;
+      vec3 pos = position;
+      pos.z += sin(pos.x * 3.0 + time) * 0.1;
+      pos.z += sin(pos.y * 4.0 + time * 0.5) * 0.1;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+    }
+  `,
+
+    fragmentShader: `
+    varying vec2 vUv;
+
+    void main() {
+      gl_FragColor = vec4(0.0, 0.5, 1.0, 1.0);
+    }
+  `,
+};
+
+// Create the shader material
+const material = new THREE.ShaderMaterial({
+    uniforms: waterShader.uniforms,
+    vertexShader: waterShader.vertexShader,
+    fragmentShader: waterShader.fragmentShader,
+});
+const plane = new THREE.Mesh(geometry, material);
+plane.rotateX(-Math.PI / 2);
+
+// Add the mesh object to the scene
+scene.add(plane);
+
+// Define variables to store the previous and current mouse positions
+let mousePos = new THREE.Vector2();
+let lastMousePos = new THREE.Vector2();
+
+// Add an event listener to track the mouse position
+document.addEventListener('mousemove', (event) => {
+    lastMousePos.copy(mousePos);
+    mousePos.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mousePos.y = -(event.clientY / window.innerHeight) * 2 + 1;
 });
 
-// Create a plane geometry for the water grid
-const waterGeometry = new THREE.PlaneGeometry(30, 30, 50, 50);
+// Define a function to create ripples on the water surface
+function createRipple() {
+    // Get the center of the plane geometry
+    const center = new THREE.Vector3();
+    plane.geometry.computeBoundingBox();
+    plane.geometry.boundingBox.getCenter(center);
 
-// Create the water mesh and add it to the scene
-const waterMesh = new THREE.Mesh(waterGeometry, waterMaterial);
-scene.add(waterMesh);
+    // Convert the mouse position to local coordinates
+    const localMousePos = mousePos.clone().unproject(camera);
+    const ray = new THREE.Raycaster(camera.position, localMousePos.sub(camera.position).normalize());
+    const intersection = ray.intersectObject(plane);
 
-// Set the resolution uniform based on the renderer's size
-waterMaterial.uniforms.resolution.value.set(renderer.domElement.width, renderer.domElement.height);
+    if (intersection) {
+        // Calculate the distance from the center of the plane
+        const distance = center.distanceTo(intersection.point);
 
+        // Create a ripple by adjusting the `z` position of each vertex in the plane geometry
+        const vertices = plane.geometry.vertices;
+        const maxDistance = 1;
+        const maxHeight = 0.1;
+        for (let i = 0; i < vertices.length; i++) {
+            const vertex = vertices[i];
+            const vertexDistance = center.distanceTo(vertex);
+            const d = Math.abs(distance - vertexDistance) / maxDistance;
+            if (d <= 1) {
+                vertex.z += Math.sin(d * Math.PI) * maxHeight;
+            }
+        }
+
+        // Notify Three.js that the geometry has been updated
+        plane.geometry.verticesNeedUpdate = true;
+    }
+}
+
+// Define the animate function
+function waterAnimate() {
+    requestAnimationFrame(animate);
+
+    // Update the shader uniform variables
+    material.uniforms.time.value += 0.1;
+
+    // Create ripples on the water surface
+    if (mousePos.distanceTo(lastMousePos) > 0) {
+        createRipple();
+    }
+
+    // Render the scene
+    renderer.render(scene, camera);
+}
+waterAnimate();
