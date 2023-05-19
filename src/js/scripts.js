@@ -157,5 +157,44 @@ function animate(time) {
     renderer.render(scene, camera);
 }
 
+// Create a raycaster
+const raycaster = new THREE.Raycaster();
+
+// Create a vector to store the mouse coordinates
+const mouse = new THREE.Vector2();
+
+// Set up the mousemove event listener
+window.addEventListener('mousemove', onMouseMove, false);
+
+// Function to handle mouse movement
+function onMouseMove(event) {
+    // Calculate normalized device coordinates (-1 to +1) for the mouse position
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+}
+
+// Set up the click event listener
+window.addEventListener('click', onMouseClick, false);
+
+// Function to handle mouse click
+function onMouseClick() {
+    // Cast a ray from the camera through the mouse position
+    raycaster.setFromCamera(mouse, camera);
+
+    // Find all objects intersected by the ray
+    const intersects = raycaster.intersectObjects(scene.children);
+
+    if (intersects.length > 0) {
+        // The first intersected object will be at [0]
+        const intersect = intersects[0];
+
+        // The position of the intersection point
+        const intersectionPoint = intersect.point;
+
+        //console.log('Intersection point:', intersectionPoint);
+        applyRipple(intersectionPoint.x, -intersectionPoint.z, 5, 6.);
+    }
+}
+
 // Start the animation
 renderer.setAnimationLoop(animate())
