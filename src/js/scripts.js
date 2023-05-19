@@ -14,10 +14,10 @@ renderer.setClearColor(0x222222);
 
 // Creating a perspective camera for the scene
 const camera = new THREE.PerspectiveCamera(
-  70,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  1000
+    70,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    1000
 );
 
 // Sets orbit control to move the camera around
@@ -41,20 +41,11 @@ const damping = 0.99; // damping factor
 const positions = new Float32Array(gridSize * gridSize);
 const velocities = new Float32Array(gridSize * gridSize);
 
-for (let i = 0; i < gridSize; i++) {
-    for (let j = 0; j < gridSize; j++) {
-        const index = i * gridSize + j;
-        positions[index] = 0;
-        velocities[index] = 0;
-
-        const geometry = new THREE.BufferGeometry();
-        const material = new THREE.PointsMaterial({color: 0x0000ff});
-        geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array([i * pointSize - gridWidth / 2, j * pointSize - gridHeight / 2, positions[index]]), 3));
-        const point = new THREE.Points(geometry, material);
-        point.rotation.x = -0.5 * Math.PI;
-        scene.add(point);
-    }
-}
+const geometry = new THREE.PlaneGeometry(gridWidth, gridHeight, gridSize - 1, gridSize - 1);
+const material = new THREE.MeshBasicMaterial({color: 0x0000ff, wireframe: true});
+const mesh = new THREE.Mesh(geometry, material);
+mesh.rotation.x = -0.5 * Math.PI;
+scene.add(mesh);
 
 // Function to update water simulation
 function updateWater() {
@@ -94,15 +85,13 @@ function updateWater() {
         }
     }
 
-    // Update point positions
-    for (let i = 0; i < gridSize; i++) {
-        for (let j = 0; j < gridSize; j++) {
-            const index = i * gridSize + j;
-            const positionAttribute = scene.children[i * gridSize + j].geometry.getAttribute('position');
-            positionAttribute.setZ(0, positions[index]);
-            positionAttribute.needsUpdate = true;
-        }
+    // Update mesh vertices
+    const vertices = mesh.geometry.attributes.position.array;
+    for (let i = 0; i < vertices.length; i += 3) {
+        const index = i / 3;
+        vertices[i + 2] = positions[index];
     }
+    mesh.geometry.attributes.position.needsUpdate = true;
 }
 
 // Function to apply ripple disturbance
@@ -192,7 +181,7 @@ function onMouseClick() {
         const intersectionPoint = intersect.point;
 
         //console.log('Intersection point:', intersectionPoint);
-        applyRipple(intersectionPoint.x, -intersectionPoint.z, 5, 6.);
+        applyRipple(intersectionPoint.z, intersectionPoint.x, 5, 6.);
     }
 }
 
