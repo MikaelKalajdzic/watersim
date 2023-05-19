@@ -11,14 +11,14 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 // Init grid parameters
-const gridSize = 70;
-const gridWidth = 70;
-const gridHeight = 70;
+const gridSize = 50;
+const gridWidth = 50;
+const gridHeight = 50;
 const pointSize = gridWidth / gridSize;
 
 // Set up spring model parameters
 const k = 0.01; // spring constant
-const damping = 0.98; // damping factor
+const damping = 0.99; // damping factor
 
 // Create grid of points
 const positions = new Float32Array(gridSize * gridSize);
@@ -72,6 +72,7 @@ function updateWater() {
             // Update velocity and position
             velocities[index] += force * deltaT;
             positions[index] += velocities[index] * deltaT;
+            velocities[index] *= damping;
         }
     }
 
@@ -124,7 +125,7 @@ function animate() {
 
     // Apply ripple disturbance at the center of the grid
     if (!ripple) {
-        applyRipple(10, 10, 5, 6);
+        applyRipple(10, 10, 5, 20);
         ripple = true;
     }
 
