@@ -10,6 +10,103 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
+// Init grid parameters
+const gridSize = 70;
+const gridWidth = 70;
+const gridHeight = 70;
+const pointSize = gridWidth / gridSize;
+
+// Set up spring model parameters
+const k = 0.01; // spring constant
+const damping = 0.98; // damping factor
+
+// Create grid of points
+const positions = new Float32Array(gridSize * gridSize);
+const velocities = new Float32Array(gridSize * gridSize);
+
+for (let i = 0; i < gridSize; i++) {
+    for (let j = 0; j < gridSize; j++) {
+        const index = i * gridSize + j;
+        positions[index] = 0;
+        velocities[index] = 0;
+
+        const geometry = new THREE.BufferGeometry();
+        const material = new THREE.PointsMaterial({color: 0x0000ff});
+        geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array([i * pointSize - gridWidth / 2, j * pointSize - gridHeight / 2, positions[index]]), 3));
+        const point = new THREE.Points(geometry, material);
+        scene.add(point);
+    }
+}
+
+// Function to update water simulation
+function updateWater() {
+    const deltaT = 0.7; // Time step
+
+    // Calculate forces for each point
+    for (let i = 0; i < gridSize; i++) {
+        for (let j = 0; j < gridSize; j++) {
+            const index = i * gridSize + j;
+            let force = 0;
+
+            // Calculate forces from neighbors
+            if (i > 0) {
+                const neighborIndex = (i - 1) * gridSize + j;
+                force += k * (positions[neighborIndex] - positions[index]);
+            }
+            if (i < gridSize - 1) {
+                const neighborIndex = (i + 1) * gridSize + j;
+                force += k * (positions[neighborIndex] - positions[index]);
+            }
+            if (j > 0) {
+                const neighborIndex = i * gridSize + j - 1;
+                force += k * (positions[neighborIndex] - positions[index]);
+            }
+            if (j < gridSize - 1) {
+                const neighborIndex = i * gridSize + j + 1;
+                force += k * (positions[neighborIndex] - positions[index]);
+            }
+
+            // Apply damping
+            force *= damping;
+
+            // Update velocity and position
+            velocities[index] += force * deltaT;
+            positions[index] += velocities[index] * deltaT;
+        }
+    }
+
+    // Update point positions
+    for (let i = 0; i < gridSize; i++) {
+        for (let j = 0; j < gridSize; j++) {
+            const index = i * gridSize + j;
+            const positionAttribute = scene.children[i * gridSize + j].geometry.getAttribute('position');
+            positionAttribute.setZ(0, positions[index]);
+            positionAttribute.needsUpdate = true;
+        }
+    }
+}
+
+// Function to apply ripple disturbance
+function applyRipple(x, y, radius, strength) {
+    const centerX = (gridSize / gridWidth) * (x + gridWidth / 2);
+    const centerY = (gridSize / gridHeight) * (y + gridHeight / 2);
+    const radiusSquared = radius * radius;
+
+    for (let i = 0; i < gridSize; i++) {
+        for (let j = 0; j < gridSize; j++) {
+            const index = i * gridSize + j;
+            const dx = i - centerX;
+            const dy = j - centerY;
+            const distanceSquared = dx * dx + dy * dy;
+
+            if (distanceSquared < radiusSquared) {
+                const factor = strength * Math.cos((Math.sqrt(distanceSquared) / radius) * Math.PI / 2);
+                positions[index] += factor;
+            }
+        }
+    }
+}
+
 // Set up camera controls
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
@@ -19,91 +116,20 @@ controls.minDistance = 1;
 controls.maxDistance = 100;
 controls.update();
 
-// Init grid parameters
-const gridSize = 50;
-const gridWidth = 50;
-const gridHeight = 50;
-const pointSize = gridWidth / gridSize;
-
-// Set up spring model parameters
-const k = 0.1; // spring constant
-const damping = 0.92; // damping factor
-
-// Create grid of points
-const points = [];
-for (let i = 0; i < gridSize; i++) {
-    points[i] = [];
-    for (let j = 0; j < gridSize; j++) {
-        const geometry = new THREE.BufferGeometry();
-        const material = new THREE.PointsMaterial({color: 0x0000ff});
-        geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array([i * pointSize - gridWidth / 2, j * pointSize - gridHeight / 2, 0]), 3));
-        points[i][j] = new THREE.Points(geometry, material);
-        scene.add(points[i][j]);
-    }
-}
-
-function updateWater() {
-
-    // Calculate forces for each point
-    for (let i = 0; i < gridSize; i++) {
-        for (let j = 0; j < gridSize; j++) {
-            const pointPosition = points[i][j].geometry.attributes.position;
-            const force = new THREE.Vector3(0, 0, 0);
-
-            // Calculate forces from neighbors
-            if (i > 0) {
-                const neighborPosition = points[i - 1][j].geometry.attributes.position;
-                force.add(new THREE.Vector3(pointPosition.getX(0) - neighborPosition.getX(0), pointPosition.getY(0) - neighborPosition.getY(0), 0).multiplyScalar(-k));
-            }
-            if (i < gridSize - 1) {
-                const neighborPosition = points[i + 1][j].geometry.attributes.position;
-                force.add(new THREE.Vector3(pointPosition.getX(0) - neighborPosition.getX(0), pointPosition.getY(0) - neighborPosition.getY(0), 0).multiplyScalar(-k));
-            }
-            if (j > 0) {
-                const neighborPosition = points[i][j - 1].geometry.attributes.position;
-                force.add(new THREE.Vector3(0, pointPosition.getY(0) - neighborPosition.getY(0), pointPosition.getZ(0) - neighborPosition.getZ(0)).multiplyScalar(-k));
-            }
-            if (j < gridSize - 1) {
-                const neighborPosition = points[i][j + 1].geometry.attributes.position;
-                force.add(new THREE.Vector3(0, pointPosition.getY(0) - neighborPosition.getY(0), pointPosition.getZ(0) - neighborPosition.getZ(0)).multiplyScalar(-k));
-            }
-
-            // Apply damping
-            force.multiplyScalar(damping);
-
-            // Update point position
-            pointPosition.setZ(0, pointPosition.getZ(0) + force.z);
-            points[i][j].geometry.attributes.position.needsUpdate = true;
-        }
-    }
-}
-
-function applyRipple(x, y, radius, strength) {
-    for (let i = 0; i < gridSize; i++) {
-        for (let j = 0; j < gridSize; j++) {
-            const pointPosition = points[i][j].geometry.attributes.position;
-            const distance = Math.sqrt((pointPosition.getX(0) - x) ** 2 + (pointPosition.getY(0) - y) ** 2);
-            if (distance < radius) {
-                const factor = strength * Math.cos((distance / radius) * Math.PI / 2);
-                pointPosition.setZ(0, factor);
-            }
-        }
-    }
-}
-
 let ripple = false;
 
+// Render loop
 function animate() {
     requestAnimationFrame(animate);
 
-    // Update water simulation
-    updateWater();
-
-    // Apply one ripple disturbance
+    // Apply ripple disturbance at the center of the grid
     if (!ripple) {
-        applyRipple(10, 10, 10, 10);
+        applyRipple(10, 10, 5, 6);
         ripple = true;
     }
+
+    // Update water simulation
+    updateWater();
 
     // Update camera controls
     controls.update();
@@ -112,4 +138,5 @@ function animate() {
     renderer.render(scene, camera);
 }
 
+// Start the animation
 animate();
