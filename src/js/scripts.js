@@ -61,6 +61,7 @@ const vertexShader = `
 // Create a fragment shader for the water
 const fragmentShader = `
   varying vec2 vUv;
+  uniform sampler2D waterNormals; // Water normal map texture
   uniform float time;
 
   void main() {
@@ -73,6 +74,10 @@ const fragmentShader = `
     vec3 color = vec3(0.0, 0.3, 0.5);
     vec3 finalColor = color + distortion;
 
+    // Apply water normal map texture
+    vec2 normalMap = texture2D(waterNormals, vUv).rg;
+    finalColor += vec3(normalMap, 0.0) * 0.1; // Adjust the intensity of the normal map
+
     gl_FragColor = vec4(finalColor, 1.0);
   }
 `;
@@ -83,6 +88,7 @@ const material = new THREE.ShaderMaterial({
   fragmentShader: fragmentShader,
   uniforms: {
     time: { value: 0.0 }, // Uniform to control the time parameter in the fragment shader
+    waterNormals: { value: new THREE.TextureLoader().load('https://raw.githubusercontent.com/IanUme/ThreejsTest/master/textures/waternormals.jpg') }, // Water normal map texture
   },
 });
 
@@ -177,6 +183,9 @@ function animate(time) {
   // Update water simulation
   updateWater();
 
+  // Update time uniform in the shader
+  material.uniforms.time.value = time * 0.001;
+
   // Render the scene along with its camera
   renderer.render(scene, camera);
 }
@@ -192,36 +201,40 @@ window.addEventListener('mousemove', onMouseMove, false);
 
 // Function to handle mouse movement
 function onMouseMove(event) {
-  // Calculate normalized device coordinates (-1 to +1) for the mouse position
-  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    // Calculate normalized device coordinates (-1 to +1) for the mouse position
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 }
-
-// Set up the click event listener
-window.addEventListener('click', onMouseClick, false);
 
 // Function to handle mouse click
 function onMouseClick() {
-  // Cast a ray from the camera through the mouse position
-  raycaster.setFromCamera(mouse, camera);
+    // Cast a ray from the camera through the mouse position
+    raycaster.setFromCamera(mouse, camera);
 
-  // Find all objects intersected by the ray
-  const intersects = raycaster.intersectObjects(scene.children);
+    // Find all objects intersected by the ray
+    const intersects = raycaster.intersectObjects(scene.children);
 
-  if (intersects.length > 0) {
-    // The first intersected object will be at [0]
-    const intersect = intersects[0];
+    if (intersects.length > 0) {
+        // The first intersected object will be at [0]
+        const intersect = intersects[0];
 
-    // The position of the intersection point
-    const intersectionPoint = intersect.point;
+        // The position of the intersection point
+        const intersectionPoint = intersect.point;
 
-    applyRipple(
-      intersectionPoint.z,
-      intersectionPoint.x,
-      5,
-      6.0
-    );
-  }
+        //console.log('Intersection point:', intersectionPoint);
+        applyRipple(intersectionPoint.z, intersectionPoint.x, 5, 6.);
+    }
+}
+
+
+// Set up the resize event listener
+window.addEventListener('resize', onWindowResize);
+
+// Function to handle window resize
+function onWindowResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
 // Start the animation
