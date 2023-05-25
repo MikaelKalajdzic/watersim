@@ -61,16 +61,17 @@ const material = new THREE.ShaderMaterial({
     vertexShader: vertexShader,
     fragmentShader: fragmentShader,
     uniforms: {
-        Ka: { value: 0.8 },                      // Ambient reflection coefficient
-        Kd: { value: 0.3 },                      // Diffuse reflection coefficient
-        Ks: { value: 0.5 },                      // Specular reflection coefficient
-        shininessVal: { value: 30.0 },           // Shininess
-        ambientColor: { value: new THREE.Color(0x0000FF) },     // Ambient color
-        diffuseColor: { value: new THREE.Color(0x777777) },     // Diffuse color
-        specularColor: { value: new THREE.Color(0x777777) },    // Specular color
-        lightPos: { value: new THREE.Vector3(0, 0, 0) },         // Light position
+        Ka: { value: 0.2 },                           // Ambient reflection coefficient
+        Kd: { value: 0.8 },                           // Diffuse reflection coefficient
+        Ks: { value: 0.8 },                           // Specular reflection coefficient
+        shininessVal: { value: 200.0 },                // Shininess
+        ambientColor: { value: new THREE.Color(0x020202) },    // Ambient color
+        diffuseColor: { value: new THREE.Color(0x0055ff) },    // Diffuse color
+        specularColor: { value: new THREE.Color(0xffffff) },   // Specular color
+        lightPos: { value: new THREE.Vector3(0, 20, 0) },       // Light position
     },
-  });
+});
+
 const mesh = new THREE.Mesh(geometry, material);
 mesh.rotation.x = -0.5 * Math.PI;
 scene.add(mesh);
