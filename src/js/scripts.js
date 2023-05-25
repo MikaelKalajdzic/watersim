@@ -58,10 +58,10 @@ const material = new THREE.ShaderMaterial({
         Ka: { value: 0.3 },                      // Ambient reflection coefficient
         Kd: { value: 0.8 },                      // Diffuse reflection coefficient
         Ks: { value: 0.5 },                      // Specular reflection coefficient
-        shininessVal: { value: 50.0 },           // Shininess
+        shininessVal: { value: 30.0 },           // Shininess
         ambientColor: { value: new THREE.Color(0x0000FF) },     // Ambient color
         diffuseColor: { value: new THREE.Color(0x888888) },     // Diffuse color
-        specularColor: { value: new THREE.Color(0xffffff) },    // Specular color
+        specularColor: { value: new THREE.Color(0x888888) },    // Specular color
         lightPos: { value: new THREE.Vector3(0, 0, 0) },         // Light position
     },
   });
@@ -161,7 +161,9 @@ let ripple = false;
 // Render loop
 function animate(time) {
     requestAnimationFrame(animate);
-    //material.uniforms.modelview.value = camera.matrixWorldInverse;
+    material.uniforms.projection.value.copy(camera.projectionMatrix);
+    material.uniforms.modelview.value = camera.matrixWorldInverse;
+    material.uniforms.normalMat.value.setFromMatrix4(camera.matrixWorldInverse).transpose().invert();
 
 
     // Apply ripple disturbance at the center of the grid
@@ -175,9 +177,6 @@ function animate(time) {
 
     // // Update camera controls
     // controls.update();
-    material.uniforms.projection.value.copy(camera.projectionMatrix);
-    material.uniforms.modelview.value.copy(camera.matrixWorldInverse);
-    material.uniforms.normalMat.value.setFromMatrix4(camera.matrixWorldInverse).transpose().invert();
 
     // Render the scene along with its camera
     renderer.render(scene, camera);
