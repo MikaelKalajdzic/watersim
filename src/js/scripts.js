@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls';
+import { EXRLoader } from 'three/examples/jsm/loaders/EXRLoader';
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 
 // Set up Three.js scene
 const scene = new THREE.Scene();
@@ -26,6 +28,17 @@ const orbit = new OrbitControls(camera, renderer.domElement);
 // Camera positioning
 camera.position.set(-80, 40, 30);
 orbit.update();
+
+// Create a sphere geometry to represent the environment
+const sphereGeometry = new THREE.SphereGeometry(500, 60, 40);
+const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+// Create a mesh and add it to the scene
+const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+sphere.scale.x = -1; // Invert the sphere's normals to display the texture correctly
+scene.add(sphere);
+
+
 
 // Init grid parameters
 const gridSize = 50;
