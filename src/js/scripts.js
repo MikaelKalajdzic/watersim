@@ -1,7 +1,10 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls';
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
 import fragmentShader from '../../shaders/water/water.frag.glsl';
 import vertexShader from '../../shaders/water/water.vert.glsl';
+
+const HdrFileURL = new URL("../../textures/kloofendal_48d_partly_cloudy_puresky_1k.hdr", import.meta.url)
 
 // Set up Three.js scene
 const scene = new THREE.Scene();
@@ -28,6 +31,13 @@ const orbit = new OrbitControls(camera, renderer.domElement);
 // Camera positioning
 camera.position.set(-80, 40, 30);
 orbit.update();
+
+// Load the HDR texture using RGBELoader
+const loader = new RGBELoader();
+loader.load(HdrFileURL, function(texture) {
+    texture.mapping = THREE.EquirectangularReflectionMapping;
+    scene.background = texture;
+});
 
 // Init grid parameters
 const gridSize = 50;
