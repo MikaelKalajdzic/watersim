@@ -42,16 +42,6 @@ const positions = new Float32Array(gridSize * gridSize);
 const velocities = new Float32Array(gridSize * gridSize);
 
 const geometry = new THREE.PlaneGeometry(gridWidth, gridHeight, gridSize - 1, gridSize - 1);
-//const material = new THREE.MeshBasicMaterial({color: 0x0000ff, wireframe: true});
-// Create a vertex shader
-const vertexShader = `
-  varying vec2 vUv;
-
-  void main() {
-    vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`;
 
 import fragmentShader from '../../shaders/water/water.frag.glsl';
 import vertexShader from '../../shaders/water/water.vert.glsl';
@@ -61,9 +51,10 @@ const material = new THREE.ShaderMaterial({
     vertexShader: vertexShader,
     fragmentShader: fragmentShader,
     uniforms: {
-        time: { value: 0.0 } // Uniform to control the time parameter in the fragment shader
-    }
-});
+      time: { value: 0.0 }, // Uniform to control the time parameter in the fragment shader
+      waterNormals: { value: new THREE.TextureLoader().load('https://raw.githubusercontent.com/IanUme/ThreejsTest/master/textures/waternormals.jpg') }, // Water normal map texture
+    },
+  });
 const mesh = new THREE.Mesh(geometry, material);
 mesh.rotation.x = -0.5 * Math.PI;
 scene.add(mesh);
