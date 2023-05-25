@@ -1,31 +1,25 @@
-precision mediump float;
-varying vec3 normalInterp;  // Surface normal
-varying vec3 vertPos;       // Vertex position
-uniform float Ka;   // Ambient reflection coefficient
-uniform float Kd;   // Diffuse reflection coefficient
-uniform float Ks;   // Specular reflection coefficient
-uniform float shininessVal; // Shininess
-// Material color
-uniform vec3 ambientColor;
-uniform vec3 diffuseColor;
-uniform vec3 specularColor;
-uniform vec3 lightPos; // Light position
+uniform vec3 uLightPosition;
+uniform vec3 uLightColor;
+uniform vec3 uObjectColor;
+uniform float uSpecularStrength;
+uniform float uShininess;
+
+varying vec3 vNormal;
+varying vec3 vViewPosition;
 
 void main() {
-    vec3 N = normalize(normalInterp);
-    vec3 L = normalize(lightPos - vertPos);
+    vec3 ambient = vec3(0.1, 0.1, 0.1);
 
-    // Lambert's cosine law
-    float lambertian = max(dot(N, L), 0.0);
-    float specular = 0.0;
-    if(lambertian > 0.0) {
-        vec3 R = reflect(-L, N);      // Reflected light vector
-        vec3 V = normalize(-vertPos); // Vector to viewer
-        // Compute the specular term
-        float specAngle = max(dot(R, V), 0.0);
-        specular = pow(specAngle, shininessVal);
-    }
-    gl_FragColor = vec4(Ka * ambientColor +
-    Kd * lambertian * diffuseColor +
-    Ks * specular * specularColor, 1.0);
+    vec3 lightDirection = normalize(uLightPosition - vViewPosition);
+    vec3 viewDirection = normalize(-vViewPosition);
+    vec3 halfwayDirection = normalize(lightDirection + viewDirection);
+
+    float diffuseIntensity = max(dot(vNormal, lightDirection), 0.0);
+    vec3 diffuse = uLightColor * uObjectColor * diffuseIntensity;
+
+    float specularIntensity = pow(max(dot(vNormal, halfwayDirection), 0.0), uShininess);
+    vec3 specular = uLightColor * uSpecularStrength * specularIntensity;
+
+    vec3 result = ambient + diffuse + specular;
+    gl_FragColor = vec4(result, 1.0);
 }
