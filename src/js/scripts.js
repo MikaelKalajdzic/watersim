@@ -45,6 +45,7 @@ const geometry = new THREE.PlaneGeometry(gridWidth, gridHeight, gridSize - 1, gr
 
 import fragmentShader from '../../shaders/water/water.frag.glsl';
 import vertexShader from '../../shaders/water/water.vert.glsl';
+import {Float32BufferAttribute} from "three";
 
 // Create a ShaderMaterial using the vertex and fragment shaders
 const material = new THREE.ShaderMaterial({
@@ -99,11 +100,30 @@ function updateWater() {
 
     // Update mesh vertices
     const vertices = mesh.geometry.attributes.position.array;
+    const normals = mesh.geometry.attributes.normal.array;
     for (let i = 0; i < vertices.length; i += 3) {
         const index = i / 3;
         vertices[i + 2] = positions[index];
     }
+    // update mesh normals
+    for (let i = 0; i < vertices.length; i += 9) {
+        const v1 = new THREE.Vector3(vertices[i], vertices[i + 1], vertices[i + 2]);
+        const v2 = new THREE.Vector3(vertices[i + 3], vertices[i + 4], vertices[i + 5]);
+        const v3 = new THREE.Vector3(vertices[i + 6], vertices[i + 7], vertices[i + 8]);
+        const faceNormal = new THREE.Vector3().crossVectors(v2.sub(v1), v3.sub(v1)).normalize();
+        // Update normals for each vertex in the face
+        normals[i] = faceNormal.x;
+        normals[i + 1] = faceNormal.y;
+        normals[i + 2] = faceNormal.z;
+        normals[i + 3] = faceNormal.x;
+        normals[i + 4] = faceNormal.y;
+        normals[i + 5] = faceNormal.z;
+        normals[i + 6] = faceNormal.x;
+        normals[i + 7] = faceNormal.y;
+        normals[i + 8] = faceNormal.z;
+    }
     mesh.geometry.attributes.position.needsUpdate = true;
+    mesh.geometry.attributes.normal.needsUpdate = true;
 }
 
 // Function to apply ripple disturbance
