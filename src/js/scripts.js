@@ -52,12 +52,9 @@ const material = new THREE.ShaderMaterial({
     vertexShader: vertexShader,
     fragmentShader: fragmentShader,
     uniforms: {
-        projection: { value: new THREE.Matrix4() },
-        modelview: { value: new THREE.Matrix4() },
-        normalMat: { value: new THREE.Matrix3() },
-        Ka: { value: 0.3 },                      // Ambient reflection coefficient
+        Ka: { value: 0.5 },                      // Ambient reflection coefficient
         Kd: { value: 0.8 },                      // Diffuse reflection coefficient
-        Ks: { value: 0.5 },                      // Specular reflection coefficient
+        Ks: { value: 0.7 },                      // Specular reflection coefficient
         shininessVal: { value: 30.0 },           // Shininess
         ambientColor: { value: new THREE.Color(0x0000FF) },     // Ambient color
         diffuseColor: { value: new THREE.Color(0x888888) },     // Diffuse color
@@ -161,10 +158,6 @@ let ripple = false;
 // Render loop
 function animate(time) {
     requestAnimationFrame(animate);
-    material.uniforms.projection.value.copy(camera.projectionMatrix);
-    material.uniforms.modelview.value = camera.matrixWorldInverse;
-    material.uniforms.normalMat.value.setFromMatrix4(camera.matrixWorldInverse).transpose().invert();
-
 
     // Apply ripple disturbance at the center of the grid
     if (!ripple) {
