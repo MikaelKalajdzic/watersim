@@ -37,6 +37,7 @@ const loader = new RGBELoader();
 loader.load(HdrFileURL, function(texture) {
     texture.mapping = THREE.EquirectangularReflectionMapping;
     scene.background = texture;
+    scene.environment = texture;
 });
 
 // Init grid parameters
@@ -65,11 +66,15 @@ const material = new THREE.ShaderMaterial({
         Kd: { value: 0.8 },                           // Diffuse reflection coefficient
         Ks: { value: 0.8 },                           // Specular reflection coefficient
         shininessVal: { value: 200.0 },                // Shininess
-        ambientColor: { value: new THREE.Color(0x020202) },    // Ambient color
-        diffuseColor: { value: new THREE.Color(0x0055ff) },    // Diffuse color
-        specularColor: { value: new THREE.Color(0xffffff) },   // Specular color
-        lightPos: { value: new THREE.Vector3(0, 20, 0) },       // Light position
+        ambientColor: { value: new THREE.Color(0x87ceeb) },    // Ambient color (light blue)
+    diffuseColor: { value: new THREE.Color(0x0055ff) },    // Diffuse color (light blue)
+    specularColor: { value: new THREE.Color(0xffffff) },   // Specular color (white)
+    lightPos: { value: new THREE.Vector3(0, 20, 0) },       // Light position
+        reflectionIntensity: { value: 0.5 },          // Reflection intensity
+        opacity: { value: 0.3 }, // Add this line
     },
+    transparent: true,               // Enable transparency
+    // opacity: 0.0,                    // Set the opacity of the material
 });
 
 const mesh = new THREE.Mesh(geometry, material);
