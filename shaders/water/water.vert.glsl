@@ -1,13 +1,12 @@
-uniform float time;
-varying vec2 vUv;
+uniform mat4 projection, modelview, normalMat;
+varying vec3 normalInterp;
+varying vec3 vertPos;
 
-void main() {
-  vUv = uv;
+void main(){
   vec3 pos = position;
-
-  // Add some wave effect to the water surface
-  pos.z += sin(pos.x * 1.0 + time) * 0.1;
-  pos.z += sin(pos.y * 1.0 + time) * 0.1;
-
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+  vec3 norm = normal;
+  vec4 vertPos4 = modelview * vec4(pos, 1.0);
+  vertPos = vec3(vertPos4) / vertPos4.w;
+  normalInterp = vec3(normalMat * vec4(norm, 0.0));
+  gl_Position = projection * vertPos4;
 }

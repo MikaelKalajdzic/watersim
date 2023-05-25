@@ -52,8 +52,17 @@ const material = new THREE.ShaderMaterial({
     vertexShader: vertexShader,
     fragmentShader: fragmentShader,
     uniforms: {
-      time: { value: 0.0 }, // Uniform to control the time parameter in the fragment shader
-      waterNormals: { value: new THREE.TextureLoader().load('https://raw.githubusercontent.com/IanUme/ThreejsTest/master/textures/waternormals.jpg') }, // Water normal map texture
+        projection: { value: new THREE.Matrix4() },
+        modelview: { value: new THREE.Matrix4() },
+        normalMat: { value: new THREE.Matrix3() },
+        Ka: { value: 0.3 },                      // Ambient reflection coefficient
+        Kd: { value: 0.8 },                      // Diffuse reflection coefficient
+        Ks: { value: 0.5 },                      // Specular reflection coefficient
+        shininessVal: { value: 50.0 },           // Shininess
+        ambientColor: { value: new THREE.Color(0x0000FF) },     // Ambient color
+        diffuseColor: { value: new THREE.Color(0x888888) },     // Diffuse color
+        specularColor: { value: new THREE.Color(0xffffff) },    // Specular color
+        lightPos: { value: new THREE.Vector3(0, 0, 0) },         // Light position
     },
   });
 const mesh = new THREE.Mesh(geometry, material);
@@ -152,6 +161,8 @@ let ripple = false;
 // Render loop
 function animate(time) {
     requestAnimationFrame(animate);
+    //material.uniforms.modelview.value = camera.matrixWorldInverse;
+
 
     // Apply ripple disturbance at the center of the grid
     if (!ripple) {
@@ -164,6 +175,9 @@ function animate(time) {
 
     // // Update camera controls
     // controls.update();
+    material.uniforms.projection.value.copy(camera.projectionMatrix);
+    material.uniforms.modelview.value.copy(camera.matrixWorldInverse);
+    material.uniforms.normalMat.value.setFromMatrix4(camera.matrixWorldInverse).transpose().invert();
 
     // Render the scene along with its camera
     renderer.render(scene, camera);
