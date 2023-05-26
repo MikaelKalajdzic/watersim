@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
+import * as dat from 'dat.gui';
 import fragmentShader from '../../shaders/water/water.frag.glsl';
 import vertexShader from '../../shaders/water/water.vert.glsl';
 
@@ -29,7 +30,7 @@ const camera = new THREE.PerspectiveCamera(
 const orbit = new OrbitControls(camera, renderer.domElement);
 
 // Camera positioning
-camera.position.set(-80, 40, 30);
+camera.position.set(-90, 70, -70);
 orbit.update();
 
 // Load the HDR texture using RGBELoader
@@ -44,7 +45,6 @@ loader.load(HdrFileURL, function(texture) {
 const gridSize = 50;
 const gridWidth = 50;
 const gridHeight = 50;
-const pointSize = gridWidth / gridSize;
 
 // Set up spring model parameters
 const k = 0.01; // spring constant
@@ -69,9 +69,9 @@ const material = new THREE.ShaderMaterial({
         ambientColor: { value: new THREE.Color(0x87ceeb) },    // Ambient color (light blue)
     diffuseColor: { value: new THREE.Color(0x0055ff) },    // Diffuse color (light blue)
     specularColor: { value: new THREE.Color(0xffffff) },   // Specular color (white)
-    lightPos: { value: new THREE.Vector3(0, 20, 0) },       // Light position
-        reflectionIntensity: { value: 0.5 },          // Reflection intensity
-        opacity: { value: 0.3 }, // Add this line
+    lightPos: { value: new THREE.Vector3(100, 100, 0) },       // Light position
+    reflectionIntensity: { value: 0.5 },          // Reflection intensity
+    opacity: { value: 0.3 }, // Add this line
     },
     transparent: true,               // Enable transparency
     // opacity: 0.0,                    // Set the opacity of the material
@@ -150,16 +150,6 @@ function applyRipple(x, y, radius, strength) {
     }
 }
 
-function applyRain(numberOfDrops) {
-    for (let i = 0; i < numberOfDrops; i++) {
-        const x = (Math.random() * gridWidth) - gridWidth / 2;
-        const y = (Math.random() * gridHeight) - gridHeight / 2;
-        const radius = Math.random() * 1.5;
-        const strength = Math.random() * 2;
-        applyRipple(x, y, radius, strength);
-    }
-}
-
 let ripple = false;
 
 // Render loop
@@ -168,12 +158,9 @@ function animate(time) {
 
     // Apply ripple disturbance at the center of the grid
     if (!ripple) {
-        applyRipple(0, 0, 5, 6.);
+        applyRipple(10, 10, 5, 6.);
         ripple = true;
     }
-    /*if (Math.random() < 0.02) {
-        applyRain(10);
-    }*/
 
     // Update water simulation
     updateWater();
@@ -226,3 +213,19 @@ function onMouseClick() {
 
 // Start the animation
 renderer.setAnimationLoop(animate())
+
+
+// GUI parameters
+const gui = new dat.GUI();
+
+const options = {
+    waterReflectionIntensity:  0.5,          // Reflection intensity
+    waterOpacity: 0.3 ,
+};
+
+gui.add(options, 'waterOpacity', 0, 1).onChange((e) => {
+    material.uniforms.opacity.value = e;
+});
+gui.add(options, "waterReflectionIntensity", 0, 1).onChange((e) => {
+    material.uniforms.reflectionIntensity.value = e;
+});
