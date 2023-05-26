@@ -150,6 +150,16 @@ function applyRipple(x, y, radius, strength) {
     }
 }
 
+function applyRain(numberOfDrops) {
+    for (let i = 0; i < numberOfDrops; i++) {
+        const x = (Math.random() * gridWidth) - gridWidth / 2;
+        const y = (Math.random() * gridHeight) - gridHeight / 2;
+        const radius = Math.random() * 1.5;
+        const strength = Math.random() * 2;
+        applyRipple(x, y, radius, strength);
+    }
+}
+
 let ripple = false;
 
 // Render loop
@@ -158,9 +168,12 @@ function animate(time) {
 
     // Apply ripple disturbance at the center of the grid
     if (!ripple) {
-        applyRipple(10, 10, 5, 6.);
+        applyRipple(0, 0, 5, 6.);
         ripple = true;
     }
+    /*if (Math.random() < 0.02) {
+        applyRain(10);
+    }*/
 
     // Update water simulation
     updateWater();
