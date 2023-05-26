@@ -81,9 +81,30 @@ const mesh = new THREE.Mesh(geometry, material);
 mesh.rotation.x = -0.5 * Math.PI;
 scene.add(mesh);
 
+// Step 1: Create a sphere geometry
+const sphereRadius = 5;
+const sphereGeometry = new THREE.SphereGeometry(sphereRadius, 32, 32);
+
+// Step 2: Create a sphere mesh
+const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+
+// Step 3: Add the sphere to the scene
+scene.add(sphere);
+
 // Function to update water simulation
 function updateWater() {
     const deltaT = 0.7; // Time step
+
+    // Check for collision with the water surface
+    const spherePosition = sphere.position;
+    const sphereIndexX = Math.floor((spherePosition.x + gridWidth / 2) / gridWidth * (gridSize - 1));
+    const sphereIndexY = Math.floor((spherePosition.z + gridHeight / 2) / gridHeight * (gridSize - 1));
+    const sphereIndex = sphereIndexY * gridSize + sphereIndexX;
+    const sphereHeight = positions[sphereIndex];
+
+    // Adjust the sphere's position based on the water surface
+    sphere.position.y = sphereHeight + sphereRadius;
 
     // Calculate forces for each point
     for (let i = 0; i < gridSize; i++) {
@@ -172,9 +193,9 @@ function animate(time) {
         ripple = true;
     }
 
-    if (Math.random() < 0.1) {
-        applyRain(4);
-    }
+    // if (Math.random() < 0.1) {
+    //     applyRain(4);
+    // }
 
     // Update water simulation
     updateWater();
