@@ -171,6 +171,9 @@ function applyRipple(x, y, radius, strength) {
     }
 }
 
+let toggleRain = false;
+let rainProbability = 0.5;
+let rainDrops = 4;
 function applyRain(numberOfDrops) {
     for (let i = 0; i < numberOfDrops; i++) {
         const x = (Math.random() * gridWidth) - gridWidth / 2;
@@ -178,6 +181,11 @@ function applyRain(numberOfDrops) {
         const radius = Math.random() * 1.5;
         const strength = Math.random() * 2;
         applyRipple(x, y, radius, strength);
+    }
+}
+function applyRainWithProbability(rainDrops, rainProbability) {
+    if (Math.random() < rainProbability) {
+        applyRain(rainDrops);
     }
 }
 
@@ -193,9 +201,9 @@ function animate(time) {
         ripple = true;
     }
 
-    // if (Math.random() < 0.1) {
-    //     applyRain(4);
-    // }
+    if(toggleRain) {
+        applyRainWithProbability(rainDrops, rainProbability);
+    }
 
     // Update water simulation
     updateWater();
@@ -269,6 +277,24 @@ waterFolder.open();
 // Rain section
 const rainFolder = gui.addFolder('Rain');
 const rainOptions = {
-    numberOfDrops: 4
+    toggleRain: false,
+    numberOfDrops: 1,
+    probability: 0.2,
 };
+rainFolder.add(rainOptions, "toggleRain", false).onChange((e) => {
+    toggleRain = !toggleRain;
+})
+rainFolder.add(rainOptions, "numberOfDrops", 0, 10, 1).onChange((e) => {
+    rainDrops = Math.floor(e);
+})
+rainFolder.add(rainOptions, "probability", 0, 0.5).onChange((e) => {
+    rainProbability = e;
+})
 rainFolder.open();
+
+// Sphere section
+const sphereFolder = gui.addFolder("Sphere");
+const sphereOptions = {
+
+}
+sphereFolder.open();
