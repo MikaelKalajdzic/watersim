@@ -184,7 +184,7 @@ function applyRain(numberOfDrops) {
     }
 }
 function applyRainWithProbability(rainDrops, rainProbability) {
-    if (Math.random() < rainProbability) {
+    if (Math.random() < rainProbability / 10) {
         applyRain(rainDrops);
     }
 }
@@ -279,7 +279,7 @@ const rainFolder = gui.addFolder('Rain');
 const rainOptions = {
     toggleRain: false,
     numberOfDrops: 1,
-    probability: 0.2,
+    probability: 0.5
 };
 rainFolder.add(rainOptions, "toggleRain", false).onChange((e) => {
     toggleRain = !toggleRain;
@@ -287,7 +287,7 @@ rainFolder.add(rainOptions, "toggleRain", false).onChange((e) => {
 rainFolder.add(rainOptions, "numberOfDrops", 0, 10, 1).onChange((e) => {
     rainDrops = Math.floor(e);
 })
-rainFolder.add(rainOptions, "probability", 0, 0.5).onChange((e) => {
+rainFolder.add(rainOptions, "probability", 0, 1).onChange((e) => {
     rainProbability = e;
 })
 rainFolder.open();
