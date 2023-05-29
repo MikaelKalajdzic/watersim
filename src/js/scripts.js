@@ -292,10 +292,3 @@ rainFolder.add(rainOptions, "probability", 0, 1).onChange((e) => {
     rainProbability = e;
 })
 rainFolder.open();
-
-// Sphere section
-const sphereFolder = gui.addFolder("Sphere");
-const sphereOptions = {
-
-}
-sphereFolder.open();
