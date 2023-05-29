@@ -69,7 +69,7 @@ const material = new THREE.ShaderMaterial({
         ambientColor: { value: new THREE.Color(0x87ceeb) },    // Ambient color (light blue)
     diffuseColor: { value: new THREE.Color(0x0055ff) },    // Diffuse color (light blue)
     specularColor: { value: new THREE.Color(0xffffff) },   // Specular color (white)
-    lightPos: { value: new THREE.Vector3(100, 100, 0) },       // Light position
+    lightPos: { value: light.position },       // Light position
     reflectionIntensity: { value: 0.5 },          // Reflection intensity
     opacity: { value: 0.3 }, // Add this line
     },
@@ -81,15 +81,15 @@ const mesh = new THREE.Mesh(geometry, material);
 mesh.rotation.x = -0.5 * Math.PI;
 scene.add(mesh);
 
-// Step 1: Create a sphere geometry
+// Create a sphere geometry
 const sphereRadius = 5;
 const sphereGeometry = new THREE.SphereGeometry(sphereRadius, 32, 32);
 
-// Step 2: Create a sphere mesh
+// Create a sphere mesh
 const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
 const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
 
-// Step 3: Add the sphere to the scene
+// Add the sphere to the scene
 scene.add(sphere);
 
 // Function to update water simulation
