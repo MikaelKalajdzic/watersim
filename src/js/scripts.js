@@ -253,14 +253,22 @@ renderer.setAnimationLoop(animate())
 // GUI parameters
 const gui = new dat.GUI();
 
-const options = {
+const waterFolder = gui.addFolder('Water');
+const waterOptions = {
     waterReflectionIntensity:  0.5,          // Reflection intensity
     waterOpacity: 0.3 ,
 };
-
-gui.add(options, 'waterOpacity', 0, 1).onChange((e) => {
+waterFolder.add(options, 'waterOpacity', 0, 1).onChange((e) => {
     material.uniforms.opacity.value = e;
 });
-gui.add(options, "waterReflectionIntensity", 0, 1).onChange((e) => {
+waterFolder.add(options, "waterReflectionIntensity", 0, 1).onChange((e) => {
     material.uniforms.reflectionIntensity.value = e;
 });
+waterFolder.open();
+
+// Rain section
+const rainFolder = gui.addFolder('Rain');
+const rainOptions = {
+    numberOfDrops: 4
+};
+rainFolder.open();
