@@ -4,6 +4,7 @@ import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
 import * as dat from 'dat.gui';
 import fragmentShader from '../../shaders/water/water.frag.glsl';
 import vertexShader from '../../shaders/water/water.vert.glsl';
+import { Vector3 } from 'three';
 
 const HdrFileURL = new URL("../../textures/kloofendal_48d_partly_cloudy_puresky_1k.hdr", import.meta.url)
 
@@ -69,7 +70,7 @@ const material = new THREE.ShaderMaterial({
         ambientColor: { value: new THREE.Color(0x87ceeb) },    // Ambient color (light blue)
     diffuseColor: { value: new THREE.Color(0x0055ff) },    // Diffuse color (light blue)
     specularColor: { value: new THREE.Color(0xffffff) },   // Specular color (white)
-    lightPos: { value: light.position },       // Light position
+    lightPos: { value: new Vector3(100, 100, 0) },       // Light position
     reflectionIntensity: { value: 0.5 },          // Reflection intensity
     opacity: { value: 0.3 }, // Add this line
     },
