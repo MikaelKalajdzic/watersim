@@ -1,5 +1,12 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls';
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
+import * as dat from 'dat.gui';
+import fragmentShader from '../../shaders/water/water.frag.glsl';
+import vertexShader from '../../shaders/water/water.vert.glsl';
+import { Vector3 } from 'three';
+
+const HdrFileURL = new URL("../../textures/kloofendal_48d_partly_cloudy_puresky_1k.hdr", import.meta.url)
 
 // Set up Three.js scene
 const scene = new THREE.Scene();
@@ -24,14 +31,21 @@ const camera = new THREE.PerspectiveCamera(
 const orbit = new OrbitControls(camera, renderer.domElement);
 
 // Camera positioning
-camera.position.set(-80, 40, 30);
+camera.position.set(-90, 70, -70);
 orbit.update();
+
+// Load the HDR texture using RGBELoader
+const loader = new RGBELoader();
+loader.load(HdrFileURL, function(texture) {
+    texture.mapping = THREE.EquirectangularReflectionMapping;
+    scene.background = texture;
+    scene.environment = texture;
+});
 
 // Init grid parameters
 const gridSize = 50;
 const gridWidth = 50;
 const gridHeight = 50;
-const pointSize = gridWidth / gridSize;
 
 // Set up spring model parameters
 const k = 0.01; // spring constant
@@ -42,14 +56,56 @@ const positions = new Float32Array(gridSize * gridSize);
 const velocities = new Float32Array(gridSize * gridSize);
 
 const geometry = new THREE.PlaneGeometry(gridWidth, gridHeight, gridSize - 1, gridSize - 1);
-const material = new THREE.MeshBasicMaterial({color: 0x0000ff, wireframe: true});
+
+
+// Create a ShaderMaterial using the vertex and fragment shaders
+const material = new THREE.ShaderMaterial({
+    vertexShader: vertexShader,
+    fragmentShader: fragmentShader,
+    uniforms: {
+        Ka: { value: 0.2 },                           // Ambient reflection coefficient
+        Kd: { value: 0.8 },                           // Diffuse reflection coefficient
+        Ks: { value: 0.8 },                           // Specular reflection coefficient
+        shininessVal: { value: 200.0 },                // Shininess
+        ambientColor: { value: new THREE.Color(0x87ceeb) },    // Ambient color (light blue)
+    diffuseColor: { value: new THREE.Color(0x0055ff) },    // Diffuse color (light blue)
+    specularColor: { value: new THREE.Color(0xffffff) },   // Specular color (white)
+    lightPos: { value: new Vector3(100, 100, 0) },       // Light position
+    reflectionIntensity: { value: 0.5 },          // Reflection intensity
+    opacity: { value: 0.3 }, // Add this line
+    },
+    transparent: true,               // Enable transparency
+    // opacity: 0.0,                    // Set the opacity of the material
+});
+
 const mesh = new THREE.Mesh(geometry, material);
 mesh.rotation.x = -0.5 * Math.PI;
 scene.add(mesh);
 
+// Create a sphere geometry
+const sphereRadius = 5;
+const sphereGeometry = new THREE.SphereGeometry(sphereRadius, 32, 32);
+
+// Create a sphere mesh
+const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+
+// Add the sphere to the scene
+scene.add(sphere);
+
 // Function to update water simulation
 function updateWater() {
     const deltaT = 0.7; // Time step
+
+    // Check for collision with the water surface
+    const spherePosition = sphere.position;
+    const sphereIndexX = Math.floor((spherePosition.x + gridWidth / 2) / gridWidth * (gridSize - 1));
+    const sphereIndexY = Math.floor((spherePosition.z + gridHeight / 2) / gridHeight * (gridSize - 1));
+    const sphereIndex = sphereIndexY * gridSize + sphereIndexX;
+    const sphereHeight = positions[sphereIndex];
+
+    // Adjust the sphere's position based on the water surface
+    sphere.position.y = sphereHeight + sphereRadius;
 
     // Calculate forces for each point
     for (let i = 0; i < gridSize; i++) {
@@ -92,6 +148,7 @@ function updateWater() {
         vertices[i + 2] = positions[index];
     }
     mesh.geometry.attributes.position.needsUpdate = true;
+    mesh.geometry.computeVertexNormals();
 }
 
 // Function to apply ripple disturbance
@@ -115,14 +172,23 @@ function applyRipple(x, y, radius, strength) {
     }
 }
 
-// // Set up camera controls
-// const controls = new OrbitControls(camera, renderer.domElement);
-// // controls.enableDamping = true;
-// // controls.dampingFactor = 0.05;
-// controls.screenSpacePanning = false;
-// controls.minDistance = 1;
-// controls.maxDistance = 100;
-// controls.update();
+let toggleRain = false;
+let rainProbability = 0.5;
+let rainDrops = 4;
+function applyRain(numberOfDrops) {
+    for (let i = 0; i < numberOfDrops; i++) {
+        const x = (Math.random() * gridWidth) - gridWidth / 2;
+        const y = (Math.random() * gridHeight) - gridHeight / 2;
+        const radius = Math.random() * 1.5;
+        const strength = Math.random() * 2;
+        applyRipple(x, y, radius, strength);
+    }
+}
+function applyRainWithProbability(rainDrops, rainProbability) {
+    if (Math.random() < rainProbability / 10) {
+        applyRain(rainDrops);
+    }
+}
 
 let ripple = false;
 
@@ -132,8 +198,12 @@ function animate(time) {
 
     // Apply ripple disturbance at the center of the grid
     if (!ripple) {
-        applyRipple(10, 10, 5, 6.);
+        // applyRipple(0, 0, 5, 6.); // initial ripple effect
         ripple = true;
+    }
+
+    if(toggleRain) {
+        applyRainWithProbability(rainDrops, rainProbability);
     }
 
     // Update water simulation
@@ -187,3 +257,38 @@ function onMouseClick() {
 
 // Start the animation
 renderer.setAnimationLoop(animate())
+
+
+// GUI parameters
+const gui = new dat.GUI();
+
+const waterFolder = gui.addFolder('Water');
+const waterOptions = {
+    waterReflectionIntensity:  0.5,          // Reflection intensity
+    waterOpacity: 0.3 ,
+};
+waterFolder.add(waterOptions, 'waterOpacity', 0, 1).onChange((e) => {
+    material.uniforms.opacity.value = e;
+});
+waterFolder.add(waterOptions, "waterReflectionIntensity", 0, 1).onChange((e) => {
+    material.uniforms.reflectionIntensity.value = e;
+});
+waterFolder.open();
+
+// Rain section
+const rainFolder = gui.addFolder('Rain');
+const rainOptions = {
+    toggleRain: false,
+    numberOfDrops: 1,
+    probability: 0.5
+};
+rainFolder.add(rainOptions, "toggleRain", false).onChange((e) => {
+    toggleRain = !toggleRain;
+})
+rainFolder.add(rainOptions, "numberOfDrops", 0, 10, 1).onChange((e) => {
+    rainDrops = Math.floor(e);
+})
+rainFolder.add(rainOptions, "probability", 0, 1).onChange((e) => {
+    rainProbability = e;
+})
+rainFolder.open();
