@@ -258,10 +258,10 @@ const waterOptions = {
     waterReflectionIntensity:  0.5,          // Reflection intensity
     waterOpacity: 0.3 ,
 };
-waterFolder.add(options, 'waterOpacity', 0, 1).onChange((e) => {
+waterFolder.add(waterOptions, 'waterOpacity', 0, 1).onChange((e) => {
     material.uniforms.opacity.value = e;
 });
-waterFolder.add(options, "waterReflectionIntensity", 0, 1).onChange((e) => {
+waterFolder.add(waterOptions, "waterReflectionIntensity", 0, 1).onChange((e) => {
     material.uniforms.reflectionIntensity.value = e;
 });
 waterFolder.open();
