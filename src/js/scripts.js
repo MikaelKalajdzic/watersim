@@ -6,8 +6,6 @@ import fragmentShader from '../../shaders/water/water.frag.glsl';
 import vertexShader from '../../shaders/water/water.vert.glsl';
 import { Vector3 } from 'three';
 
-const HdrFileURL = new URL("../../textures/kloofendal_48d_partly_cloudy_puresky_1k.hdr", import.meta.url)
-
 // Set up Three.js scene
 const scene = new THREE.Scene();
 
@@ -35,6 +33,7 @@ camera.position.set(-90, 70, -70);
 orbit.update();
 
 // Load the HDR texture using RGBELoader
+const HdrFileURL = new URL("../../textures/kloofendal_48d_partly_cloudy_puresky_1k.hdr", import.meta.url)
 const loader = new RGBELoader();
 loader.load(HdrFileURL, function(texture) {
     texture.mapping = THREE.EquirectangularReflectionMapping;
@@ -63,19 +62,18 @@ const material = new THREE.ShaderMaterial({
     vertexShader: vertexShader,
     fragmentShader: fragmentShader,
     uniforms: {
-        Ka: { value: 0.2 },                           // Ambient reflection coefficient
-        Kd: { value: 0.8 },                           // Diffuse reflection coefficient
-        Ks: { value: 0.8 },                           // Specular reflection coefficient
-        shininessVal: { value: 200.0 },                // Shininess
-        ambientColor: { value: new THREE.Color(0x87ceeb) },    // Ambient color (light blue)
-    diffuseColor: { value: new THREE.Color(0x0055ff) },    // Diffuse color (light blue)
-    specularColor: { value: new THREE.Color(0xffffff) },   // Specular color (white)
-    lightPos: { value: new Vector3(100, 100, 0) },       // Light position
-    reflectionIntensity: { value: 0.5 },          // Reflection intensity
-    opacity: { value: 0.3 }, // Add this line
+        Ka: { value: 0.2 },                                    // Ambient reflection coefficient
+        Kd: { value: 0.8 },                                    // Diffuse reflection coefficient
+        Ks: { value: 0.8 },                                    // Specular reflection coefficient
+        shininessVal: { value: 200.0 },                        // Shininess
+        ambientColor: { value: new THREE.Color(0x87ceeb) }, // Ambient color (light blue)
+    diffuseColor: { value: new THREE.Color(0x0055ff) },     // Diffuse color (light blue)
+    specularColor: { value: new THREE.Color(0xffffff) },    // Specular color (white)
+    lightPos: { value: new Vector3(100, 100, 0) },    // Light position
+    reflectionIntensity: { value: 0.5 },                       // Reflection intensity
+    opacity: { value: 0.3 },                                   // Opacity
     },
-    transparent: true,               // Enable transparency
-    // opacity: 0.0,                    // Set the opacity of the material
+    transparent: true,                                         // Enable transparency
 });
 
 const mesh = new THREE.Mesh(geometry, material);
@@ -127,10 +125,10 @@ function updateWater() {
         vertices[i + 2] = positions[index];
     }
     mesh.geometry.attributes.position.needsUpdate = true;
-    mesh.geometry.computeVertexNormals();
+    mesh.geometry.computeVertexNormals(); // recompute normals
 }
 
-// Function to apply ripple disturbance
+// Function to create ripple disturbance
 function applyRipple(x, y, radius, strength) {
     const centerX = (gridSize / gridWidth) * (x + gridWidth / 2);
     const centerY = (gridSize / gridHeight) * (y + gridHeight / 2);
@@ -154,6 +152,7 @@ function applyRipple(x, y, radius, strength) {
 let toggleRain = false;
 let rainProbability = 0.5;
 let rainDrops = 4;
+
 function applyRain(numberOfDrops) {
     for (let i = 0; i < numberOfDrops; i++) {
         const x = (Math.random() * gridWidth) - gridWidth / 2;
@@ -163,27 +162,12 @@ function applyRain(numberOfDrops) {
         applyRipple(x, y, radius, strength);
     }
 }
+
+// appling rain with probability
 function applyRainWithProbability(rainDrops, rainProbability) {
     if (Math.random() < rainProbability / 10) {
         applyRain(rainDrops);
     }
-}
-
-let ripple = false;
-
-// Render loop
-function animate(time) {
-    requestAnimationFrame(animate);
-
-    if(toggleRain) {
-        applyRainWithProbability(rainDrops, rainProbability);
-    }
-
-    // Update water simulation
-    updateWater();
-
-    // Render the scene along with its camera
-    renderer.render(scene, camera);
 }
 
 // Create a raycaster
@@ -225,10 +209,6 @@ function onMouseClick() {
     }
 }
 
-// Start the animation
-renderer.setAnimationLoop(animate())
-
-
 // GUI parameters
 const gui = new dat.GUI();
 
@@ -262,3 +242,22 @@ rainFolder.add(rainOptions, "probability", 0, 1).onChange((e) => {
     rainProbability = e;
 })
 rainFolder.open();
+
+
+// Render loop
+function animate(time) {
+    requestAnimationFrame(animate);
+
+    if(toggleRain) {
+        applyRainWithProbability(rainDrops, rainProbability);
+    }
+
+    // Update water simulation
+    updateWater();
+
+    // Render the scene along with its camera
+    renderer.render(scene, camera);
+}
+
+// Start the animation
+renderer.setAnimationLoop(animate())
