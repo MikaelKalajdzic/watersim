@@ -2,6 +2,10 @@
 
 This is a project in our computer graphics class.
 
+You can read the full report here :
+[Read Final Report](https://github.com/MikaelKalajdzic/watersim/blob/master/Water%20Waves%20Simulation%20Final.pdf)
+
+
 Features :
 
 * The water reflect the environment / the sky
